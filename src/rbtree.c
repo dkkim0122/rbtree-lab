@@ -320,8 +320,6 @@ node_t* find_min_successor(const rbtree *t, const node_t* node){
 void rbtree_transplant(rbtree* t, node_t* u, node_t* v){
   
   // 1. 
-  v->parent = u->parent;
-
   if (u->parent == t->nil)
     t->root = v;
   else if(u == u->parent->left)
@@ -345,7 +343,7 @@ void rbtree_erase_fixup(rbtree* t, node_t* x){
   node_t* w;
 
   // x의 색깔이 BLACK일 때가 문제가 된다.
-  while (x!=t->nil && x->color == RBTREE_BLACK){
+  while (x!=t->root && x->color == RBTREE_BLACK){
     // 먼저 x가 왼쪽 노드일 때부터 본다.
     if (x == x->parent->left){ 
       w = x->parent->right;  //sibling w의 정의
@@ -365,19 +363,23 @@ void rbtree_erase_fixup(rbtree* t, node_t* x){
         // x의 부모가 BLACK이거나 root일 때 while문이 종료된다.
       }
       // CASE3 : CASE4로 바꾼다.
-      else if(w->right->color == RBTREE_BLACK && w->left->color == RBTREE_RED){
-        w->left->color = RBTREE_BLACK;
-        w->color = RBTREE_RED;  // w와 w.left 색 바꾸기
-        right_rotate(t, w);
-        w = x->parent->right; // rotate 후 다시 w 설정
-      }
-      // CASE4 : w.color==B, w.right.color==R : 조정 후 끝.
-      w->color = w->parent->color;
-      x->parent->color = RBTREE_BLACK;
-      w->right->color = RBTREE_BLACK;
-      left_rotate(t, x->parent);
+      else {
+        if(w->right->color == RBTREE_BLACK){
+          w->left->color = RBTREE_BLACK;
+          w->color = RBTREE_RED;  // w와 w.left 색 바꾸기
+          right_rotate(t, w);
+          w = x->parent->right; // rotate 후 다시 w 설정
+        }
+        // CASE4 : w.color==B, w.right.color==R : 조정 후 끝.
+        w->color = w->parent->color;
+        x->parent->color = RBTREE_BLACK;
+        w->right->color = RBTREE_BLACK;
+        left_rotate(t, x->parent);
 
-      x = t->root;  // while문 탈출조건 및 root 처리 -> while문 종료!
+        x = t->root;  // while문 탈출조건 및 root 처리 -> while문 종료!
+
+      }
+
     }
 
     // x가 오른쪽 노드일 때
@@ -388,7 +390,7 @@ void rbtree_erase_fixup(rbtree* t, node_t* x){
         w->color = RBTREE_BLACK;
         x->parent->color = RBTREE_RED;
         right_rotate(t, x->parent);
-        w = w->parent->left;
+        w = x->parent->left;
       }
       // CASE2
       if (w->right->color==RBTREE_BLACK && w->left->color==RBTREE_BLACK){
@@ -396,11 +398,12 @@ void rbtree_erase_fixup(rbtree* t, node_t* x){
         x = x->parent;
       }
       // CASE3
-      else if(w->left->color==RBTREE_BLACK){
-        w->right->color = RBTREE_BLACK;
-        w->color = RBTREE_RED;
-        left_rotate(t, w);
-        w = w->parent->left;
+      else {
+        if(w->left->color==RBTREE_BLACK){
+          w->right->color = RBTREE_BLACK;
+          w->color = RBTREE_RED;
+          left_rotate(t, w);
+          w = x->parent->left;
       }
       // CASE4
       w->color = x->parent->color;
@@ -409,6 +412,7 @@ void rbtree_erase_fixup(rbtree* t, node_t* x){
       right_rotate(t, x->parent);
 
       x = t->root;
+      }
     }
   }
 
@@ -471,12 +475,12 @@ int rbtree_erase(rbtree *t, node_t *p) {
     else{
       rbtree_transplant(t, y, y->right);
       y->right = p->right;
-      p->right->parent = y;
+      y->right->parent = y;
     }
 
     rbtree_transplant(t, p, y);
     y->left = p->left;
-    p->left->parent = y;
+    y->left->parent = y;
     y->color = p->color;
   }
 
