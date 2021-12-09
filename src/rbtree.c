@@ -503,22 +503,23 @@ int rbtree_erase(rbtree *t, node_t *p) {
   5. left child로 넘어갈 시 i는 증가하지 않아야 한다. right child로 넘어갈 시에도 증가하지 않는다.
   6. 해당 노드에 도착했을 때 그 노드의 key 값을 배열에 저장하고, 그 다음 i의 값을 증가시켜야 한다.
 */
-int recur_for_array(const rbtree *t, key_t *arr, node_t* x, int i){
+key_t* recur_for_array(const rbtree *t, key_t *arr, node_t* x){
 
   if (x == t->nil)
-    return i;
+    return arr;
 
-  i = recur_for_array(t, arr, x->left, i);
-  arr[i++] = x->key;
-  i = recur_for_array(t, arr, x->right, i);
+  arr = recur_for_array(t, arr, x->left);
+  *arr = x->key;
+  arr += 1;
+  arr = recur_for_array(t, arr, x->right);
 
-  return i;
+  return arr;
 }
 
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
   // TODO: implement to_array
 
-  recur_for_array(t, arr, t->root, 0);
+  recur_for_array(t, arr, t->root);
 
   return 0;
 }
